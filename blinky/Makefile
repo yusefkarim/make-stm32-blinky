@@ -2,9 +2,9 @@
 
 ##### Project setup #####
 # Name of your current project
-PROJ_NAME = test
+PROJ_NAME = blinky
 # Directory containing all CMSIS relevent source code
-CMSIS_DIR = $(HOME)/STM32L4-Projects/CMSIS
+CMSIS_DIR = ../CMSIS
 # Current working directory of our project
 CWD := $(shell pwd)
 
