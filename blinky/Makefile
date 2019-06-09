@@ -2,30 +2,46 @@
 
 ##### Project setup #####
 # Name of your current project
-PROJ_NAME = blinky
+PROJ_NAME = $(shell basename $(CURDIR))
 # Directory containing all CMSIS relevent source code
 CMSIS_DIR = ../CMSIS
-# Current working directory of our project
-CWD := $(shell pwd)
+LINKER_SCRIPT = $(CMSIS_DIR)/STM32L476RG.ld
+
+##### Toolchain #####
+TRIPLE  = 	arm-none-eabi
+CC 		=	${TRIPLE}-gcc
+LD 		= 	${TRIPLE}-ld
+AS 		= 	${TRIPLE}-as
+GDB 	= 	${TRIPLE}-gdb
+OBJCOPY =  	${TRIPLE}-objcopy
 
 ##### Compiler options #####
-CC = arm-none-eabi-gcc
-OBJCOPY = arm-none-eabi-objcopy
-CFLAGS = -g -Wall -TSTM32L476RG.ld
-CFLAGS += -mlittle-endian -mthumb -mcpu=cortex-m4 --specs=nosys.specs
-CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
+CFLAGS = -g -Wall -T$(LINKER_SCRIPT)
+CFLAGS += -mlittle-endian -mthumb -mcpu=cortex-m4
+CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16 --specs=nosys.specs
 
 ##### Project specific libraries #####
-SRC_FILES = main.c
 SRC_FILES += $(wildcard src/*.c)
 CFLAGS += -Iinc
 
 ##### CMSIS libraries and source code #####
-CFLAGS += -I$(CMSIS_DIR)/inc
 SRC_FILES += $(CMSIS_DIR)/src/*
-
+CFLAGS += -I$(CMSIS_DIR)/inc
 
 all:  $(PROJ_NAME).bin
+
+##### Flash code to board using OpenOCD #####
+flash: $(PROJ_NAME).bin
+	openocd -f board/stm32l4discovery.cfg -c "program $^ reset exit 0x08000000"
+
+##### Erase all flash memory from board using OpenOCD #####
+erase:
+	openocd -f board/stm32l4discovery.cfg -c "init; reset halt; stm32l4x mass_erase 0; exit"
+
+##### Print out disassembly of specified function using GDB #####
+##### USAGE EXAMPLE: 	make disass FUNC=main 				#####
+disass: $(PROJ_NAME).elf
+	$(GDB) $^ -batch -ex 'disass /r $(FUNC)'
 
 clean:
 	rm -f $(PROJ_NAME).bin $(PROJ_NAME).elf
